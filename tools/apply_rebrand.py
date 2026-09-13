@@ -5,11 +5,15 @@ import sys
 
 root = Path(sys.argv[1] if len(sys.argv) > 1 else "upstream")
 
+OLD_PACKAGE = "fr.madu59.ptp"
+NEW_PACKAGE = "dev.fixpot47.seeyourtrajectory"
+NEW_MOD_ID = "seeyourtrajectory"
+
 # gradle.properties
 props_path = root / "gradle.properties"
 props = props_path.read_text(encoding="utf-8")
 replacements = {
-    r"(?m)^mod_version=.*$": "mod_version=1.0.0",
+    r"(?m)^mod_version=.*$": "mod_version=1.0.1",
     r"(?m)^maven_group=.*$": "maven_group=dev.fixpot47",
     r"(?m)^archives_base_name=.*$": "archives_base_name=see-your-trajectory",
 }
@@ -17,10 +21,18 @@ for pattern, repl in replacements.items():
     props = re.sub(pattern, repl, props)
 props_path.write_text(props, encoding="utf-8")
 
+# Repackage every Java source so this fork can coexist with the original PTP jar.
+# Keeping the upstream package caused Fabric to load the same class for both mods,
+# which made both entrypoints register ptp:handshake_c2s and crash at startup.
+for java_path in root.glob("src/**/*.java"):
+    text = java_path.read_text(encoding="utf-8")
+    text = text.replace(OLD_PACKAGE, NEW_PACKAGE)
+    java_path.write_text(text, encoding="utf-8")
+
 # Fabric metadata
 fabric_path = root / "src/main/resources/fabric.mod.json"
 data = json.loads(fabric_path.read_text(encoding="utf-8"))
-data["id"] = "seeyourtrajectory"
+data["id"] = NEW_MOD_ID
 data["name"] = "See your Trajectory!"
 data["description"] = "Preview the trajectory of arrows, snowballs, eggs, tridents, ender pearls and other supported projectiles."
 data["authors"] = [
@@ -33,12 +45,25 @@ data["contact"] = {
     "issues": "https://github.com/fixpot47/see-your-projectory/issues"
 }
 data["license"] = "MIT"
+
+# Point all Java entrypoints at the fork's own package namespace.
+for entrypoint_name, entries in data.get("entrypoints", {}).items():
+    if isinstance(entries, list):
+        data["entrypoints"][entrypoint_name] = [
+            entry.replace(OLD_PACKAGE, NEW_PACKAGE) if isinstance(entry, str) else entry
+            for entry in entries
+        ]
+
 fabric_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 # Internal mod namespace/config/networking ID.
 ptp_path = root / "src/main/java/fr/madu59/ptp/Ptp.java"
 text = ptp_path.read_text(encoding="utf-8")
-text = text.replace('public static final String MOD_ID = "ptp";', 'public static final String MOD_ID = "seeyourtrajectory";')
+text = re.sub(
+    r'public\s+static\s+final\s+String\s+MOD_ID\s*=\s*"ptp"\s*;',
+    'public static final String MOD_ID = "seeyourtrajectory";',
+    text,
+)
 text = text.replace('[PTP] Sending handshake to player...', '[See your Trajectory!] Sending handshake to player...')
 text = text.replace('Hello Fabric world!', 'See your Trajectory! initialized.')
 ptp_path.write_text(text, encoding="utf-8")
@@ -88,4 +113,4 @@ notice.write_text(
     encoding="utf-8",
 )
 
-print("Applied See your Trajectory! rebrand to", root)
+print("Applied See your Trajectory! rebrand and isolated package namespace to", root)
