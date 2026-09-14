@@ -13,7 +13,7 @@ NEW_MOD_ID = "seeyourtrajectory"
 props_path = root / "gradle.properties"
 props = props_path.read_text(encoding="utf-8")
 replacements = {
-    r"(?m)^mod_version=.*$": "mod_version=1.0.1",
+    r"(?m)^mod_version=.*$": "mod_version=1.0.0",
     r"(?m)^maven_group=.*$": "maven_group=dev.fixpot47",
     r"(?m)^archives_base_name=.*$": "archives_base_name=see-your-trajectory",
 }
@@ -40,9 +40,9 @@ data["authors"] = [
     "maDU59_ (original ProjectilesTrajectoryPreview author)"
 ]
 data["contact"] = {
-    "homepage": "https://github.com/fixpot47/see-your-projectory",
-    "sources": "https://github.com/fixpot47/see-your-projectory",
-    "issues": "https://github.com/fixpot47/see-your-projectory/issues"
+    "homepage": "https://github.com/fixpot47/see-your-trajectory",
+    "sources": "https://github.com/fixpot47/see-your-trajectory",
+    "issues": "https://github.com/fixpot47/see-your-trajectory/issues"
 }
 data["license"] = "MIT"
 
